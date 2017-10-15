@@ -280,3 +280,21 @@ TEST_F( utObjImportExport, issue1453_segfault ) {
     const aiScene *scene = myimporter.ReadFileFromMemory( ObjModel.c_str(), ObjModel.size(), aiProcess_ValidateDataStructure );
     EXPECT_EQ( nullptr, scene );
 }
+
+TEST_F(utObjImportExport, issueXXX_segfault) {
+	static const std::string ObjModel =
+		"l a1\n"
+		"v  1.0  0.0  0.0\n"
+		"v  0.0 -1.0  0.0\n"
+		"v -1.0  0.0  0.0\n"
+		"v  0.0  1.0  0.0\n"
+		"v  0.0  0.0  1.0\n"
+		"f  2  1  5\n"
+		"f  3  2  5\n"
+		"f  4  3  5\n"
+		"f  1  4  5\nB";
+
+	Assimp::Importer myimporter;
+	const aiScene *scene = myimporter.ReadFileFromMemory(ObjModel.c_str(), ObjModel.size(), aiProcess_ValidateDataStructure);
+	EXPECT_EQ(nullptr, scene);
+}
