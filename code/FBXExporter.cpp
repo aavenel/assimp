@@ -462,8 +462,8 @@ size_t count_images(const aiScene* scene) {
             ++tt
         ){
             const aiTextureType textype = static_cast<aiTextureType>(tt);
-            const size_t texcount = mat->GetTextureCount(textype);
-            for (size_t j = 0; j < texcount; ++j) {
+            const unsigned int texcount = mat->GetTextureCount(textype);
+            for (unsigned int j = 0; j < texcount; ++j) {
                 mat->GetTexture(textype, j, &texpath);
                 images.insert(std::string(texpath.C_Str()));
             }
@@ -512,8 +512,8 @@ void FBXExporter::WriteDefinitions ()
     // and specifying the base properties to use when otherwise unspecified.
 
     // we need to count the objects
-    int32_t count;
-    int32_t total_count = 0;
+    int64_t count;
+    int64_t total_count = 0;
 
     // and store them
     std::vector<FBX::Node> object_nodes;
@@ -1055,7 +1055,7 @@ void FBXExporter::WriteObjects ()
             std::vector<double> uv_data;
             std::vector<int32_t> uv_indices;
             std::map<aiVector3D,int32_t> index_by_uv;
-            size_t index = 0;
+            int32_t index = 0;
             for (size_t fi = 0; fi < m->mNumFaces; ++fi) {
                 const aiFace &f = m->mFaces[fi];
                 for (size_t pvi = 0; pvi < f.mNumIndices; ++pvi) {
@@ -1214,10 +1214,10 @@ void FBXExporter::WriteObjects ()
         c.r = 0; c.g = 0; c.b = 0;
         m->Get(AI_MATKEY_COLOR_EMISSIVE, c);
         p.AddP70vector("Emissive", c.r, c.g, c.b);
-        c.r = 0.2; c.g = 0.2; c.b = 0.2;
+        c.r = (ai_real)0.2; c.g = (ai_real)0.2; c.b = (ai_real)0.2;
         m->Get(AI_MATKEY_COLOR_AMBIENT, c);
         p.AddP70vector("Ambient", c.r, c.g, c.b);
-        c.r = 0.8; c.g = 0.8; c.b = 0.8;
+        c.r = (ai_real)0.8; c.g = (ai_real)0.8; c.b = (ai_real)0.8;
         m->Get(AI_MATKEY_COLOR_DIFFUSE, c);
         p.AddP70vector("Diffuse", c.r, c.g, c.b);
         // The FBX SDK determines "Opacity" from transparency colour (RGB)
@@ -1226,29 +1226,29 @@ void FBXExporter::WriteObjects ()
         // so we should take it from AI_MATKEY_OPACITY if possible.
         // It might make more sense to use TransparencyFactor,
         // but Blender actually loads "Opacity" correctly, so let's use it.
-        f = 1.0;
+        f = 1.0f;
         if (m->Get(AI_MATKEY_COLOR_TRANSPARENT, c) == aiReturn_SUCCESS) {
-            f = 1.0 - ((c.r + c.g + c.b) / 3);
+            f = 1.0f - ((c.r + c.g + c.b) / 3);
         }
         m->Get(AI_MATKEY_OPACITY, f);
         p.AddP70double("Opacity", f);
         if (phong) {
             // specular color is multiplied by shininess_strength
-            c.r = 0.2; c.g = 0.2; c.b = 0.2;
+            c.r = (ai_real)0.2; c.g = (ai_real)0.2; c.b = (ai_real)0.2;
             m->Get(AI_MATKEY_COLOR_SPECULAR, c);
-            f = 1.0;
+            f = 1.0f;
             m->Get(AI_MATKEY_SHININESS_STRENGTH, f);
             p.AddP70vector("Specular", f*c.r, f*c.g, f*c.b);
-            f = 20.0;
+            f = 20.0f;
             m->Get(AI_MATKEY_SHININESS, f);
             p.AddP70double("Shininess", f);
             // Legacy "Reflectivity" is F*F*((R+G+B)/3),
             // where F is the proportion of light reflected (AKA reflectivity),
             // and RGB is the reflective colour of the material.
             // No idea why, but we might as well set it the same way.
-            f = 0.0;
+            f = 0.0f;
             m->Get(AI_MATKEY_REFLECTIVITY, f);
-            c.r = 1.0, c.g = 1.0, c.b = 1.0;
+            c.r = (ai_real)1.0, c.g = (ai_real)1.0, c.b = (ai_real)1.0;
             m->Get(AI_MATKEY_COLOR_REFLECTIVE, c);
             p.AddP70double("Reflectivity", f*f*((c.r+c.g+c.b)/3.0));
         }
@@ -1685,7 +1685,7 @@ void FBXExporter::WriteObjects ()
 
             // this should be the same as the bone's mOffsetMatrix.
             // if it's not the same, the skeleton isn't in the bind pose.
-            const float epsilon = 1e-5; // some error is to be expected
+            const float epsilon = 1e-5f; // some error is to be expected
             bool bone_xform_okay = true;
             if (b && ! tr.Equal(b->mOffsetMatrix, epsilon)) {
                 not_in_bind_pose.insert(b);

@@ -109,7 +109,7 @@ public:
 
         std::copy( mMeshes.begin(), mMeshes.end(), scene->mMeshes);
 
-        scene->mNumMaterials = mMaterials.size();
+        scene->mNumMaterials = (unsigned int)mMaterials.size();
         if ( 0 != scene->mNumMaterials ) {
             scene->mMaterials = new aiMaterial*[ scene->mNumMaterials ];
             std::copy( mMaterials.begin(), mMaterials.end(), scene->mMaterials );
