@@ -53,7 +53,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assimp/Vertex.h>
 #include <assimp/TinyFormatter.h>
 #include <stdio.h>
-#include <unordered_set>
 
 using namespace Assimp;
 // ------------------------------------------------------------------------------------------------
@@ -243,19 +242,25 @@ int JoinVerticesProcess::ProcessMesh( aiMesh* pMesh, unsigned int meshIndex)
     // We should care only about used vertices, not all of them
     // (this can happen due to original file vertices buffer being used by
     // multiple meshes)
-    std::unordered_set<unsigned int> usedVertexIndices;
+    std::vector<unsigned int> usedVertexIndices;
     usedVertexIndices.reserve(pMesh->mNumVertices);
     for( unsigned int a = 0; a < pMesh->mNumFaces; a++)
     {
         aiFace& face = pMesh->mFaces[a];
         for( unsigned int b = 0; b < face.mNumIndices; b++) {
-            usedVertexIndices.insert(face.mIndices[b]);
+            usedVertexIndices.push_back(face.mIndices[b]);
         }
     }
 
+    //Remove duplicate on usedVertexIndices
+    //XXX TODO Bench that this is faster than std::set or std::unordered_set
+    //TODO : Since usedVertexIndices uses integer, radix sort should be faster here.
+    std::sort(usedVertexIndices.begin(), usedVertexIndices.end());
+    usedVertexIndices.erase(std::unique(usedVertexIndices.begin(), usedVertexIndices.end()), usedVertexIndices.end());
+
     // We'll never have more vertices afterwards.
     std::vector<Vertex> uniqueVertices;
-    uniqueVertices.reserve( pMesh->mNumVertices);
+    uniqueVertices.reserve(usedVertexIndices.size());
 
     // For each vertex the index of the vertex it was replaced by.
     // Since the maximal number of vertices is 2^31-1, the most significand bit can be used to mark
@@ -305,13 +310,10 @@ int JoinVerticesProcess::ProcessMesh( aiMesh* pMesh, unsigned int meshIndex)
     }
 
     // Now check each vertex if it brings something new to the table
-    for( unsigned int a = 0; a < pMesh->mNumVertices; a++)  {
-        if (usedVertexIndices.find(a) == usedVertexIndices.end()) {
-            continue;
-        }
+    for (auto it = usedVertexIndices.begin(); it < usedVertexIndices.end(); ++it) {
 
         // collect the vertex data
-        Vertex v(pMesh,a);
+        Vertex v(pMesh,*it);
 
         // collect all vertices that are close enough to the given position
         vertexFinder->FindIdenticalPositions( v.position, verticesFound);
@@ -336,7 +338,7 @@ int JoinVerticesProcess::ProcessMesh( aiMesh* pMesh, unsigned int meshIndex)
                 bool breaksAnimMesh = false;
                 for (unsigned int animMeshIndex = 0; animMeshIndex < pMesh->mNumAnimMeshes; animMeshIndex++) {
                     const Vertex& animatedUV = uniqueAnimatedVertices[animMeshIndex][ uidx];
-                    Vertex aniMeshVertex(pMesh->mAnimMeshes[animMeshIndex], a);
+                    Vertex aniMeshVertex(pMesh->mAnimMeshes[animMeshIndex], *it);
                     if (!areVerticesEqual(aniMeshVertex, animatedUV, complex)) {
                         breaksAnimMesh = true;
                         break;
@@ -356,16 +358,16 @@ int JoinVerticesProcess::ProcessMesh( aiMesh* pMesh, unsigned int meshIndex)
         if( matchIndex != 0xffffffff)
         {
             // store where to found the matching unique vertex
-            replaceIndex[a] = matchIndex | 0x80000000;
+            replaceIndex[*it] = matchIndex | 0x80000000;
         }
         else
         {
             // no unique vertex matches it up to now -> so add it
-            replaceIndex[a] = (unsigned int)uniqueVertices.size();
+            replaceIndex[*it] = (unsigned int)uniqueVertices.size();
             uniqueVertices.push_back( v);
             if (hasAnimMeshes) {
                 for (unsigned int animMeshIndex = 0; animMeshIndex < pMesh->mNumAnimMeshes; animMeshIndex++) {
-                    Vertex aniMeshVertex(pMesh->mAnimMeshes[animMeshIndex], a);
+                    Vertex aniMeshVertex(pMesh->mAnimMeshes[animMeshIndex], *it);
                     uniqueAnimatedVertices[animMeshIndex].push_back(aniMeshVertex);
                 }
             }
