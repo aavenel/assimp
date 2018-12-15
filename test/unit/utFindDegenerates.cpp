@@ -146,3 +146,53 @@ TEST_F(FindDegeneratesProcessTest, testDegeneratesRemovalWithAreaCheck) {
 
     EXPECT_EQ(mesh->mNumUVComponents[1]-100, mesh->mNumFaces);
 }
+
+TEST_F(FindDegeneratesProcessTest, testTriangleArea) {
+
+    aiFace f = aiFace();
+    f.mNumIndices = 3;
+    f.mIndices = new unsigned int[3]{ 0, 1, 2 };
+
+    mesh->mNumVertices = 3;
+    mesh->mVertices = new aiVector3D[3];
+
+    //Sanity check
+    mesh->mVertices[0] = { 0.0f,0.0f,0.0f };
+    mesh->mVertices[1] = { 1.0f,1.0f,0.0f };
+    mesh->mVertices[2] = { 1.0f,0.0f,0.0f };
+    float area = Assimp::calculateAreaOfTriangle(f, mesh);
+    EXPECT_EQ(area, 0.5f);
+
+    //Small uniform triangle
+    //values are small, but in the same range, so we shouldn't have any precision problem
+    mesh->mVertices[0] = { 0.0f, 0.0f, 0.0f };
+    mesh->mVertices[1] = { 1e-3f, 1e-3f, 0.0f };
+    mesh->mVertices[2] = { 1e-3f, 0.0f, 0.0f };
+    area = Assimp::calculateAreaOfTriangle(f, mesh);
+
+    EXPECT_FLOAT_EQ(area, 5e-7f);
+
+    //Small squewed triangle
+    mesh->mVertices[0] = { 0.0f, 0.0f, 0.0f };
+    mesh->mVertices[1] = { 1e8f, 0.0f, 0.0f };
+    mesh->mVertices[2] = { 0.0f, 1e-8f, 0.0f };
+    area = Assimp::calculateAreaOfTriangle(f, mesh);
+
+    EXPECT_FLOAT_EQ(area, 0.5f);
+
+    //Squewed triangle
+    mesh->mVertices[0] = { 0.0f, 0.0f, 0.0f };
+    mesh->mVertices[1] = { 1337e8f, 0.0f, 0.0f };
+    mesh->mVertices[2] = { 0.0f, 1337e-8f, 0.0f };
+    area = Assimp::calculateAreaOfTriangle(f, mesh);
+
+    EXPECT_FLOAT_EQ(area, 893784.5f);
+
+    //Triangle 3d
+    mesh->mVertices[0] = { 0.0f, 0.0f, 0.0f };
+    mesh->mVertices[1] = { 0.0f, 1.0f, 1.0f };
+    mesh->mVertices[2] = { 1.0f, 1.0f, 0.0f };
+    area = Assimp::calculateAreaOfTriangle(f, mesh);
+
+    EXPECT_FLOAT_EQ(area, sqrtf(3.0f)/2.0f);
+}

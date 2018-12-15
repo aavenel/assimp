@@ -124,6 +124,31 @@ bool FindDegeneratesProcess::isAreaCheckEnabled() const {
     return mConfigCheckAreaOfTriangle;
 }
 
+static aiVector3D crossProduct(aiVector3D a, aiVector3D b)
+{
+    ai_real x = a[1] * b[2] - a[2] * b[1];
+    ai_real y = a[2] * b[0] - a[0] * b[2];
+    ai_real z = a[0] * b[1] - a[1] * b[0];
+    return aiVector3D(x, y, z);
+}
+
+static ai_real calculateAreaOfTriangle(const aiFace& face, aiMesh* mesh) {
+    ai_real area = 0;
+
+    aiVector3D vA(mesh->mVertices[face.mIndices[0]]);
+    aiVector3D vB(mesh->mVertices[face.mIndices[1]]);
+    aiVector3D vC(mesh->mVertices[face.mIndices[2]]);
+
+    aiVector3D AB(vB.x - vA.x, vB.y - vA.y, vB.z - vA.z);
+    aiVector3D AC(vC.x - vA.x, vC.y - vA.y, vC.z - vA.z);
+
+    // vecU = AB cross AC
+    // triangle area = |vecU| / 2
+    area = crossProduct(AB, AC).Length() / 2;
+
+    return area;
+}
+
 } // Namespace Assimp
 
 #endif // !! AI_FINDDEGENERATESPROCESS_H_INC
