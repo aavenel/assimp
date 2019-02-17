@@ -54,7 +54,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <map>
 #include <string>
-#include <list>
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
@@ -562,7 +561,7 @@ namespace glTF2
 
 		/// \var EncodedRegion_List
 		/// List of encoded regions.
-		std::list<SEncodedRegion*> EncodedRegion_List;
+		std::vector<SEncodedRegion*> EncodedRegion_List;
 
 		/******************* Functions *******************/
 
